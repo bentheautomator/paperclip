@@ -27,6 +27,7 @@ import {
   documentService,
   logActivity,
   projectService,
+  publishLiveEvent,
   routineService,
   workProductService,
 } from "../services/index.js";
@@ -279,6 +280,7 @@ export function issueRoutes(db: Db, storage: StorageService) {
       labelId: req.query.labelId as string | undefined,
       originKind: req.query.originKind as string | undefined,
       originId: req.query.originId as string | undefined,
+      identifier: req.query.identifier as string | undefined,
       includeRoutineExecutions:
         req.query.includeRoutineExecutions === "true" || req.query.includeRoutineExecutions === "1",
       q: req.query.q as string | undefined,
@@ -1413,6 +1415,19 @@ export function issueRoutes(db: Db, storage: StorageService) {
         issueTitle: currentIssue.title,
         ...(reopened ? { reopened: true, reopenedFrom: reopenFromStatus, source: "comment" } : {}),
         ...(interruptedRunId ? { interruptedRunId } : {}),
+      },
+    });
+
+    publishLiveEvent({
+      companyId: currentIssue.companyId,
+      type: "issue.comment_created",
+      payload: {
+        issueId: currentIssue.id,
+        commentId: comment.id,
+        authorAgentId: comment.authorAgentId ?? null,
+        authorUserId: comment.authorUserId ?? null,
+        body: comment.body,
+        createdAt: comment.createdAt.toISOString(),
       },
     });
 
